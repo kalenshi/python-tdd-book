@@ -14,3 +14,4 @@ class HomePageTest(TestCase):
         self.assertIn(
             request_data["item_text"], response.content.decode("utf8")
         )
+        self.assertTemplateUsed(response, "home.html")
