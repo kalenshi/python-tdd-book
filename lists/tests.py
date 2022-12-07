@@ -1,4 +1,5 @@
 from django.test import TestCase
+from rest_framework import status
 
 from lists.models import Item
 
@@ -9,14 +10,33 @@ class HomePageTest(TestCase):
         response = self.client.get("/")
         self.assertTemplateUsed(response, "home.html")
 
-    def test_can_save_a_post_request(self):
+    def test_can_save_a_POST_request(self):
+        request_data = {"item_text": "A new list item"}
+        self.client.post("/", data=request_data)
+
+        self.assertEqual(Item.objects.count(), 1)
+        new_item = Item.objects.first()
+        self.assertEqual(request_data["item_text"], new_item.text)
+
+    def test_redirect_after_a_post(self) -> None:
         request_data = {"item_text": "A new list item"}
         response = self.client.post("/", data=request_data)
 
-        self.assertIn(
-            request_data["item_text"], response.content.decode("utf8")
-        )
-        self.assertTemplateUsed(response, "home.html")
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(response["location"], "/")
+
+    def test_only_saves_items_when_necessary(self) -> None:
+        self.client.get("/")
+        self.assertEqual(Item.objects.count(), 0)
+
+    def test_displays_all_list_items(self) -> None:
+        Item.objects.create(text="itemy 1")
+        Item.objects.create(text="itemy 2")
+
+        response = self.client.get("/")
+
+        self.assertIn("itemy 1", response.content.decode())
+        self.assertIn("itemy 2", response.content.decode())
 
 
 class ItemModelTest(TestCase):
