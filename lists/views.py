@@ -1,4 +1,5 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import Http404
 from lists.models import Item, List
 
 
@@ -7,8 +8,11 @@ def home_page(request) -> None:
 
 
 def view_list(request, list_id) -> None:
-    list_ = List.objects.get(id=list_id)
-    return render(request, "list.html", {"list": list_})
+    try:
+        list_ = List.objects.get(id=list_id)
+        return render(request, "list.html", {"list": list_})
+    except List.DoesNotExist:
+        return redirect("/")
 
 
 def new_list(request) -> None:
@@ -19,5 +23,5 @@ def new_list(request) -> None:
 
 def add_item(request, list_id) -> None:
     list_ = List.objects.get(id=list_id)
-    item = Item.objects.create(text=request.POST["item_text"], list=list_)
+    _ = Item.objects.create(text=request.POST["item_text"], list=list_)
     return redirect(f"/lists/{list_id}/")
